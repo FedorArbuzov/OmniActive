@@ -4,12 +4,12 @@ import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { clearAuth, getWorkouts, Workout } from '@/utils/storage';
+import { getWorkouts, Workout } from '@/utils/storage';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Button, StyleSheet, TouchableOpacity } from 'react-native';
 
-export default function ZalScreen() {
+export default function BasketballScreen() {
   const [hasWorkouts, setHasWorkouts] = useState(false);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const colorScheme = useColorScheme();
@@ -22,45 +22,35 @@ export default function ZalScreen() {
   );
 
   const checkWorkouts = async () => {
-    const categoryWorkouts = await getWorkouts('index');
+    const categoryWorkouts = await getWorkouts('basketball');
     setWorkouts(categoryWorkouts);
     setHasWorkouts(categoryWorkouts.length > 0);
   };
 
   const handleStartWorkout = async () => {
-    const workouts = await getWorkouts('index');
+    const workouts = await getWorkouts('basketball');
     if (workouts.length === 0) {
-      router.push('/create-workout?category=index' as any);
+      router.push('/create-workout?category=basketball' as any);
     } else {
-      router.push('/select-workout?category=index' as any);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await clearAuth();
-      router.replace('/auth' as any);
-    } catch (error) {
-      console.error('Ошибка при выходе:', error);
-      alert('Ошибка при выходе');
+      router.push('/select-workout?category=basketball' as any);
     }
   };
 
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#E8F5E9', dark: '#1B5E20' }}
+      headerBackgroundColor={{ light: '#FFF3E0', dark: '#E65100' }}
       headerImage={
         <IconSymbol
           size={310}
-          color="#4CAF50"
-          name="figure.strengthtraining.traditional"
+          color="#FF9800"
+          name="basketball.fill"
           style={styles.headerImage}
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Зал</ThemedText>
+        <ThemedText type="title">Баскетбол</ThemedText>
       </ThemedView>
-      <ThemedText>Тренировки в зале</ThemedText>
+      <ThemedText>Баскетбольные тренировки</ThemedText>
       
       {workouts.length > 0 && (
         <ThemedView style={styles.stepContainer}>
@@ -69,7 +59,7 @@ export default function ZalScreen() {
             <TouchableOpacity
               key={workout.id}
               style={[styles.workoutCard, { backgroundColor: colors.background + '80', borderColor: colors.text + '20' }]}
-              onPress={() => router.push('/select-workout?category=index' as any)}>
+              onPress={() => router.push(`/workout-screen?workoutId=${workout.id}&category=basketball` as any)}>
               <ThemedText type="defaultSemiBold" style={styles.workoutCardName}>
                 {workout.name}
               </ThemedText>
@@ -85,16 +75,7 @@ export default function ZalScreen() {
         <Button
           title={hasWorkouts ? 'Начать тренировку' : 'Создать тренировку'}
           onPress={handleStartWorkout}
-          color="#4CAF50"
-        />
-      </ThemedView>
-      
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Выход</ThemedText>
-        <Button
-          title="Выйти из аккаунта"
-          onPress={handleLogout}
-          color="#ff3b30"
+          color="#FF9800"
         />
       </ThemedView>
     </ParallaxScrollView>
@@ -103,7 +84,7 @@ export default function ZalScreen() {
 
 const styles = StyleSheet.create({
   headerImage: {
-    color: '#4CAF50',
+    color: '#FF9800',
     bottom: -90,
     left: -35,
     position: 'absolute',
