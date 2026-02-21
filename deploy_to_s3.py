@@ -1,51 +1,33 @@
 #!/usr/bin/env python3
 """
-Скрипт для загрузки build файлов в Yandex Cloud S3 bucket
+Скрипт для создания ZIP-архива и загрузки в Yandex Cloud S3 bucket
+для деплоя Cloud Functions
 """
 import os
-import mimetypes
+import zipfile
+import subprocess
+import shutil
+import tempfile
 import boto3
 from pathlib import Path
 
 # Настройки S3
 S3_ENDPOINT = 'https://storage.yandexcloud.net'
+S3_BUCKET = 'testbackpython'
+
+# Настройки сборки
+BACKEND_DIR = './backend'
+ZIP_FILENAME = 'function.zip'
 S3_ACCESS_KEY = ''
 S3_SECRET_KEY = ''
-S3_BUCKET = 'testbackpython'
-S3_PREFIX = ''  # Префикс для файлов в bucket (например, admin/)
+INSTALL_DEPENDENCIES = True  # Установить зависимости из requirements.txt в архив
 
-# Директория с build файлами
-BUILD_DIR = './backend'
-
-
-def get_content_type(file_path):
-    """Определяет Content-Type для файла"""
-    content_type, _ = mimetypes.guess_type(file_path)
-    if content_type:
-        return content_type
+def upload_zip_to_s3(zip_file, bucket_name):
+    """
+    Загружает ZIP-архив в S3 bucket
+    """
+    print(f"\n☁️ Загружаю {zip_file} в S3...")
     
-    # Дополнительные типы
-    ext = os.path.splitext(file_path)[1].lower()
-    types_map = {
-        '.js': 'application/javascript',
-        '.py': 'application/python',
-        '.css': 'text/css',
-        '.html': 'text/html',
-        '.json': 'application/json',
-        '.svg': 'image/svg+xml',
-        '.woff': 'font/woff',
-        '.woff2': 'font/woff2',
-        '.ttf': 'font/ttf',
-        '.eot': 'application/vnd.ms-fontobject',
-    }
-    return types_map.get(ext, 'application/octet-stream')
-
-
-def upload_directory_to_s3(local_directory, bucket_name, s3_prefix=''):
-    """
-    Загружает все файлы из директории в S3 bucket с сохранением структуры
-    """
-    # Инициализация S3 клиента
     session = boto3.session.Session()
     s3_client = session.client(
         service_name='s3',
@@ -54,66 +36,45 @@ def upload_directory_to_s3(local_directory, bucket_name, s3_prefix=''):
         aws_secret_access_key=S3_SECRET_KEY
     )
     
-    local_path = Path(local_directory)
+    file_size = os.path.getsize(zip_file)
+    zip_name = os.path.basename(zip_file)
     
-    if not local_path.exists():
-        print(f"❌ Ошибка: директория {local_directory} не найдена!")
-        return
+    try:
+        with open(zip_file, 'rb') as f:
+            s3_client.put_object(
+                Bucket=bucket_name,
+                Key=zip_name,
+                Body=f,
+                ContentType='application/zip'
+            )
+        
+        print(f"✅ Загружено: {zip_name} ({file_size / 1024 / 1024:.2f} MB)")
+        print(f"\n🎯 Для Cloud Function укажите:")
+        print(f"   Бакет: {bucket_name}")
+        print(f"   Объект: {zip_name}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Ошибка загрузки: {e}")
+        return False
+
+
+def main():
+    print("🚀 Деплой backend в Yandex Cloud Functions")
+    print("=" * 60)
     
-    # Собираем все файлы
-    files_to_upload = []
-    for root, dirs, files in os.walk(local_directory):
-        for file in files:
-            local_file = os.path.join(root, file)
-            # Относительный путь от BUILD_DIR
-            relative_path = os.path.relpath(local_file, local_directory)
-            # Ключ в S3 (с префиксом)
-            s3_key = os.path.join(s3_prefix, relative_path).replace('\\', '/')
-            files_to_upload.append((local_file, s3_key))
+    zip_path = './backend/lambda-deployment.zip'
+
+    # Загружаем в S3
+    success = upload_zip_to_s3(zip_path, S3_BUCKET)
     
-    print(f"📦 Найдено файлов для загрузки: {len(files_to_upload)}")
-    print(f"🎯 Target bucket: {bucket_name}")
-    print(f"📁 Префикс в S3: {s3_prefix or '(корень bucket)'}")
-    print("-" * 60)
-    
-    # Загружаем файлы
-    uploaded = 0
-    failed = 0
-    
-    for local_file, s3_key in files_to_upload:
-        try:
-            content_type = get_content_type(local_file)
-            file_size = os.path.getsize(local_file)
-            
-            # Загружаем файл
-            with open(local_file, 'rb') as f:
-                s3_client.put_object(
-                    Bucket=bucket_name,
-                    Key=s3_key,
-                    Body=f,
-                    ACL='public-read',
-                    ContentType=content_type
-                )
-            
-            uploaded += 1
-            size_kb = file_size / 1024
-            print(f"✅ {s3_key} ({size_kb:.2f} KB, {content_type})")
-            
-        except Exception as e:
-            failed += 1
-            print(f"❌ Ошибка при загрузке {s3_key}: {e}")
-    
-    print("-" * 60)
-    print(f"✨ Загрузка завершена!")
-    print(f"   Успешно: {uploaded}")
-    print(f"   Ошибок: {failed}")
-    
-    if uploaded > 0:
-        print(f"\n🌐 Доступ к файлам:")
-        print(f"   https://storage.yandexcloud.net/{bucket_name}/{s3_prefix}")
+    if success:
+        print("\n" + "=" * 60)
+        print("✨ Деплой завершен успешно!")
+        print(f"   Точка входа: handler.handler")
+    else:
+        print("\n❌ Деплой завершен с ошибками")
 
 
 if __name__ == '__main__':
-    print("🚀 Начинаю загрузку build файлов в S3...")
-    print()
-    upload_directory_to_s3(BUILD_DIR, S3_BUCKET, S3_PREFIX)
+    main()
