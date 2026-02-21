@@ -18,7 +18,7 @@ function TabLayoutContent() {
   const { drawerOpen, openDrawer, closeDrawer } = useDrawer();
   const colors = Colors[colorScheme ?? 'light'];
 
-  const tabs = ['index', 'basketball', 'football', 'hockey', 'run'] as const;
+  const tabs = ['index', 'gym', 'basketball', 'football', 'hockey', 'run', 'calories'] as const;
   type TabName = typeof tabs[number];
 
   // Восстанавливаем последний открытый таб при загрузке
@@ -84,13 +84,61 @@ function TabLayoutContent() {
               currentTab === 'index' && { backgroundColor: colors.tint + '20' },
             ]}
             onPress={() => handleTabPress('index')}>
-            <IconSymbol size={24} name="figure.strengthtraining.traditional" color={currentTab === 'index' ? colors.tint : colors.text} />
+            <IconSymbol size={24} name="house.fill" color={currentTab === 'index' ? colors.tint : colors.text} />
             <ThemedText
               style={[
                 styles.drawerLabel,
                 currentTab === 'index' && { color: colors.tint, fontWeight: '600' },
               ]}>
+              Главная
+            </ThemedText>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.drawerItem,
+              currentTab === 'gym' && { backgroundColor: colors.tint + '20' },
+            ]}
+            onPress={() => handleTabPress('gym')}>
+            <IconSymbol size={24} name="figure.strengthtraining.traditional" color={currentTab === 'gym' ? colors.tint : colors.text} />
+            <ThemedText
+              style={[
+                styles.drawerLabel,
+                currentTab === 'gym' && { color: colors.tint, fontWeight: '600' },
+              ]}>
               Зал
+            </ThemedText>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.drawerItem,
+              currentTab === 'run' && { backgroundColor: colors.tint + '20' },
+            ]}
+            onPress={() => handleTabPress('run')}>
+            <IconSymbol size={24} name="figure.walk" color={currentTab === 'run' ? colors.tint : colors.text} />
+            <ThemedText
+              style={[
+                styles.drawerLabel,
+                currentTab === 'run' && { color: colors.tint, fontWeight: '600' },
+              ]}>
+              Активность
+            </ThemedText>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.drawerItem,
+              currentTab === 'calories' && { backgroundColor: colors.tint + '20' },
+            ]}
+            onPress={() => handleTabPress('calories')}>
+            <IconSymbol size={24} name="fork.knife" color={currentTab === 'calories' ? colors.tint : colors.text} />
+            <ThemedText
+              style={[
+                styles.drawerLabel,
+                currentTab === 'calories' && { color: colors.tint, fontWeight: '600' },
+              ]}>
+              Калории
             </ThemedText>
           </Pressable>
 
@@ -139,22 +187,6 @@ function TabLayoutContent() {
                 currentTab === 'hockey' && { color: colors.tint, fontWeight: '600' },
               ]}>
               Хоккей
-            </ThemedText>
-          </Pressable>
-
-          <Pressable
-            style={[
-              styles.drawerItem,
-              currentTab === 'run' && { backgroundColor: colors.tint + '20' },
-            ]}
-            onPress={() => handleTabPress('run')}>
-            <IconSymbol size={24} name="figure.run" color={currentTab === 'run' ? colors.tint : colors.text} />
-            <ThemedText
-              style={[
-                styles.drawerLabel,
-                currentTab === 'run' && { color: colors.tint, fontWeight: '600' },
-              ]}>
-              Бег
             </ThemedText>
           </Pressable>
           </ThemedView>

@@ -10,7 +10,9 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "update:production": "eas update --channel production --message",
-    "update:preview": "eas update --channel preview --message"
+    "update:preview": "eas update --channel preview --message",
+    "predeploy": "expo export -p web",
+    "deploy": "gh-pages --nojekyll -d dist -r git@github.com:OmniFitTech/OmniFitTech.github.io.git -b main"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -20,6 +22,7 @@
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
     "expo": "~54.0.33",
+    "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.13",
     "expo-font": "~14.0.11",
     "expo-haptics": "~15.0.8",
@@ -48,6 +51,7 @@
     "@types/react": "~19.1.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "gh-pages": "^6.2.0",
     "typescript": "~5.9.2"
   },
   "private": true

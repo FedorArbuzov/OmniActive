@@ -1,7 +1,8 @@
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import { SectionTitleWithTooltip } from '@/components/ui/section-title-with-tooltip';
+import * as api from '@/utils/api';
 import { getWorkouts } from '@/utils/storage';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -17,16 +18,34 @@ export default function FootballScreen() {
   );
 
   const checkWorkouts = async () => {
-    const workouts = await getWorkouts('football');
-    setHasWorkouts(workouts.length > 0);
+    try {
+      const workouts = await api.getWorkouts('football');
+      setHasWorkouts(workouts.length > 0);
+    } catch (error) {
+      console.error('Ошибка загрузки тренировок:', error);
+      // Fallback на локальное хранилище при ошибке API
+      const workouts = await getWorkouts('football');
+      setHasWorkouts(workouts.length > 0);
+    }
   };
 
   const handleStartWorkout = async () => {
-    const workouts = await getWorkouts('football');
-    if (workouts.length === 0) {
-      router.push('/create-workout?category=football' as any);
-    } else {
-      router.push('/select-workout?category=football' as any);
+    try {
+      const workouts = await api.getWorkouts('football');
+      if (workouts.length === 0) {
+        router.push('/create-workout?category=football' as any);
+      } else {
+        router.push('/select-workout?category=football' as any);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки тренировок:', error);
+      // Fallback на локальное хранилище при ошибке API
+      const workouts = await getWorkouts('football');
+      if (workouts.length === 0) {
+        router.push('/create-workout?category=football' as any);
+      } else {
+        router.push('/select-workout?category=football' as any);
+      }
     }
   };
 
@@ -42,7 +61,10 @@ export default function FootballScreen() {
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Футбол</ThemedText>
+        <SectionTitleWithTooltip
+          title="Футбол"
+          tooltipText="Раздел для футбольных тренировок. Создавайте программы и фиксируйте выполнение."
+        />
       </ThemedView>
       <ThemedText>Футбольные тренировки</ThemedText>
       
@@ -58,12 +80,6 @@ export default function FootballScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#2196F3',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
-  },
   titleContainer: {
     flexDirection: 'row',
     gap: 8,

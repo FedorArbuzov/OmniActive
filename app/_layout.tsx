@@ -21,6 +21,12 @@ function NavigationContent() {
   const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
     async function checkAppState() {
       try {
         // Проверяем первый запуск
@@ -147,6 +153,93 @@ function NavigationContent() {
           title: 'Выполнение упражнения',
           headerShown: true,
         }} 
+      />
+      <Stack.Screen
+        name="create-dish"
+        options={{
+          presentation: 'modal',
+          title: 'Создать блюдо',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="add-food"
+        options={{
+          presentation: 'modal',
+          title: 'Добавить что съел',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="dish-add"
+        options={{
+          presentation: 'modal',
+          title: 'Блюдо',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="calories-stats"
+        options={{
+          title: 'Статистика калорий',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="calories-day"
+        options={{
+          title: 'День',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="select-workout-plan"
+        options={{
+          title: 'Подбор плана тренировок',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="workout-plan-detail"
+        options={{
+          title: 'План тренировок',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="create-plan-workout"
+        options={{
+          title: 'План тренировок',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="exercise-stats"
+        options={{
+          title: 'Статистика по упражнениям',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="exercise-stats-detail"
+        options={{
+          title: 'Упражнение',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="exercise-stats-calendar"
+        options={{
+          title: 'Календарь',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="exercise-day"
+        options={{
+          title: 'День',
+          headerShown: true,
+        }}
       />
       <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
     </Stack>

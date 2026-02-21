@@ -2,6 +2,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import * as api from '@/utils/api';
 import { getWorkouts, Workout } from '@/utils/storage';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -13,16 +14,22 @@ export default function SelectWorkoutScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const [workouts, setWorkouts] = useState<Workout[]>([]);
 
+  const loadWorkouts = async () => {
+    if (category) {
+      try {
+        const categoryWorkouts = await api.getWorkouts(category);
+        setWorkouts(categoryWorkouts);
+      } catch (error) {
+        console.error('Ошибка загрузки тренировок:', error);
+        const categoryWorkouts = await getWorkouts(category);
+        setWorkouts(categoryWorkouts);
+      }
+    }
+  };
+
   useEffect(() => {
     loadWorkouts();
   }, []);
-
-  const loadWorkouts = async () => {
-    if (category) {
-      const categoryWorkouts = await getWorkouts(category);
-      setWorkouts(categoryWorkouts);
-    }
-  };
 
   const handleSelectWorkout = (workout: Workout) => {
     router.push(`/workout-screen?workoutId=${workout.id}&category=${category}` as any);

@@ -1,0 +1,49 @@
+version: '3.8'
+
+# Production конфигурация (без hot-reload)
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: omniactive_db_prod
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-omniactive_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-omniactive_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-omniactive_db}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-omniactive_user} -d ${POSTGRES_DB:-omniactive_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: omniactive_api_prod
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-10080}
+      CORS_ORIGINS: ${CORS_ORIGINS:-'["*"]'}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    command: >
+      sh -c "
+        echo 'Ожидание готовности базы данных...' &&
+        sleep 5 &&
+        python init_db.py &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000
+      "
+
+volumes:
+  postgres_data_prod:

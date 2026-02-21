@@ -1,9 +1,10 @@
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import { SectionTitleWithTooltip } from '@/components/ui/section-title-with-tooltip';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import * as api from '@/utils/api';
 import { getWorkouts, Workout } from '@/utils/storage';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -22,33 +23,46 @@ export default function BasketballScreen() {
   );
 
   const checkWorkouts = async () => {
-    const categoryWorkouts = await getWorkouts('basketball');
-    setWorkouts(categoryWorkouts);
-    setHasWorkouts(categoryWorkouts.length > 0);
+    try {
+      const categoryWorkouts = await api.getWorkouts('basketball');
+      setWorkouts(categoryWorkouts);
+      setHasWorkouts(categoryWorkouts.length > 0);
+    } catch (error) {
+      console.error('Ошибка загрузки тренировок:', error);
+      // Fallback на локальное хранилище при ошибке API
+      const categoryWorkouts = await getWorkouts('basketball');
+      setWorkouts(categoryWorkouts);
+      setHasWorkouts(categoryWorkouts.length > 0);
+    }
   };
 
   const handleStartWorkout = async () => {
-    const workouts = await getWorkouts('basketball');
-    if (workouts.length === 0) {
-      router.push('/create-workout?category=basketball' as any);
-    } else {
-      router.push('/select-workout?category=basketball' as any);
+    try {
+      const workouts = await api.getWorkouts('basketball');
+      if (workouts.length === 0) {
+        router.push('/create-workout?category=basketball' as any);
+      } else {
+        router.push('/select-workout?category=basketball' as any);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки тренировок:', error);
+      // Fallback на локальное хранилище при ошибке API
+      const workouts = await getWorkouts('basketball');
+      if (workouts.length === 0) {
+        router.push('/create-workout?category=basketball' as any);
+      } else {
+        router.push('/select-workout?category=basketball' as any);
+      }
     }
   };
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#FFF3E0', dark: '#E65100' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#FF9800"
-          name="basketball.fill"
-          style={styles.headerImage}
-        />
-      }>
+    <ParallaxScrollView>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Баскетбол</ThemedText>
+        <SectionTitleWithTooltip
+          title="Баскетбол"
+          tooltipText="Раздел для баскетбольных тренировок: создавайте программы и записывайте попадания и промахи."
+        />
       </ThemedView>
       <ThemedText>Баскетбольные тренировки</ThemedText>
       
@@ -83,12 +97,6 @@ export default function BasketballScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#FF9800',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
-  },
   titleContainer: {
     flexDirection: 'row',
     gap: 8,

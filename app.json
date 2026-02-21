@@ -3,17 +3,13 @@
     "name": "OmniActive",
     "slug": "omniactive",
     "version": "1.0.0",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": { "policy": "appVersion" },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "omniactive",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true
-    },
+    "ios": { "supportsTablet": true },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -27,7 +23,11 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "display": "standalone",
+      "themeColor": "#0a7ea4",
+      "backgroundColor": "#ffffff",
+      "startUrl": "/"
     },
     "plugins": [
       "expo-router",
@@ -38,25 +38,17 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
+          "dark": { "backgroundColor": "#000000" }
         }
       ]
     ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
-    },
+    "experiments": { "typedRoutes": true, "reactCompiler": true },
     "extra": {
       "router": {},
-      "eas": {
-        "projectId": "bae4efbc-e1a2-4ffc-9f91-20662c89bac7"
-      },
+      "eas": { "projectId": "bae4efbc-e1a2-4ffc-9f91-20662c89bac7" },
       "owner": "fedorarbuzovhse",
-      "updates": {
-        "url": "https://u.expo.dev/bae4efbc-e1a2-4ffc-9f91-20662c89bac7"
-      }
-    }
+      "updates": { "url": "https://u.expo.dev/bae4efbc-e1a2-4ffc-9f91-20662c89bac7" }
+    },
+    "updates": { "url": "https://u.expo.dev/bae4efbc-e1a2-4ffc-9f91-20662c89bac7" }
   }
 }

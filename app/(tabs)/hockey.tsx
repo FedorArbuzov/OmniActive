@@ -1,7 +1,8 @@
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import { SectionTitleWithTooltip } from '@/components/ui/section-title-with-tooltip';
+import * as api from '@/utils/api';
 import { getWorkouts } from '@/utils/storage';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -17,32 +18,44 @@ export default function HockeyScreen() {
   );
 
   const checkWorkouts = async () => {
-    const workouts = await getWorkouts('hockey');
-    setHasWorkouts(workouts.length > 0);
+    try {
+      const workouts = await api.getWorkouts('hockey');
+      setHasWorkouts(workouts.length > 0);
+    } catch (error) {
+      console.error('Ошибка загрузки тренировок:', error);
+      // Fallback на локальное хранилище при ошибке API
+      const workouts = await getWorkouts('hockey');
+      setHasWorkouts(workouts.length > 0);
+    }
   };
 
   const handleStartWorkout = async () => {
-    const workouts = await getWorkouts('hockey');
-    if (workouts.length === 0) {
-      router.push('/create-workout?category=hockey' as any);
-    } else {
-      router.push('/select-workout?category=hockey' as any);
+    try {
+      const workouts = await api.getWorkouts('hockey');
+      if (workouts.length === 0) {
+        router.push('/create-workout?category=hockey' as any);
+      } else {
+        router.push('/select-workout?category=hockey' as any);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки тренировок:', error);
+      // Fallback на локальное хранилище при ошибке API
+      const workouts = await getWorkouts('hockey');
+      if (workouts.length === 0) {
+        router.push('/create-workout?category=hockey' as any);
+      } else {
+        router.push('/select-workout?category=hockey' as any);
+      }
     }
   };
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#E1F5FE', dark: '#01579B' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#00BCD4"
-          name="figure.skating"
-          style={styles.headerImage}
-        />
-      }>
+    <ParallaxScrollView>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Хоккей</ThemedText>
+        <SectionTitleWithTooltip
+          title="Хоккей"
+          tooltipText="Раздел для хоккейных тренировок. Создавайте программы и отслеживайте прогресс."
+        />
       </ThemedView>
       <ThemedText>Хоккейные тренировки</ThemedText>
       
@@ -58,12 +71,6 @@ export default function HockeyScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#00BCD4',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
-  },
   titleContainer: {
     flexDirection: 'row',
     gap: 8,

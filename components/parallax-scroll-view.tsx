@@ -15,10 +15,11 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 const HEADER_HEIGHT = 250;
+const TOP_BAR_HEIGHT = 56;
 
 type Props = PropsWithChildren<{
-  headerImage: ReactElement;
-  headerBackgroundColor: { dark: string; light: string };
+  headerImage?: ReactElement | null;
+  headerBackgroundColor?: { dark: string; light: string } | null;
 }>;
 
 export default function ParallaxScrollView({
@@ -32,8 +33,10 @@ export default function ParallaxScrollView({
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollOffset(scrollRef);
   const { openDrawer } = useDrawer();
-  
+  const hasCover = headerImage != null && headerBackgroundColor != null;
+
   const headerAnimatedStyle = useAnimatedStyle(() => {
+    if (!hasCover) return {};
     return {
       transform: [
         {
@@ -55,19 +58,29 @@ export default function ParallaxScrollView({
       ref={scrollRef}
       style={{ backgroundColor, flex: 1 }}
       scrollEventThrottle={16}>
-      <Animated.View
-        style={[
-          styles.header,
-          { backgroundColor: headerBackgroundColor[colorScheme] },
-          headerAnimatedStyle,
-        ]}>
-        {headerImage}
-        <Pressable
-          onPress={openDrawer}
-          style={styles.menuButton}>
-          <IconSymbol size={28} name="line.3.horizontal" color={colors.text} />
-        </Pressable>
-      </Animated.View>
+      {hasCover ? (
+        <Animated.View
+          style={[
+            styles.header,
+            { backgroundColor: headerBackgroundColor![colorScheme] },
+            headerAnimatedStyle,
+          ]}>
+          {headerImage}
+          <Pressable
+            onPress={openDrawer}
+            style={styles.menuButton}>
+            <IconSymbol size={28} name="line.3.horizontal" color={colors.text} />
+          </Pressable>
+        </Animated.View>
+      ) : (
+        <ThemedView style={[styles.topBar, { backgroundColor }]}>
+          <Pressable
+            onPress={openDrawer}
+            style={[styles.menuButton, styles.menuButtonCompact]}>
+            <IconSymbol size={28} name="line.3.horizontal" color={colors.text} />
+          </Pressable>
+        </ThemedView>
+      )}
       <ThemedView style={styles.content}>{children}</ThemedView>
     </Animated.ScrollView>
   );
@@ -90,6 +103,18 @@ const styles = StyleSheet.create({
     zIndex: 10,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     borderRadius: 8,
+  },
+  topBar: {
+    height: TOP_BAR_HEIGHT,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  menuButtonCompact: {
+    position: 'relative',
+    top: 0,
+    left: 0,
+    alignSelf: 'flex-start',
+    backgroundColor: 'transparent',
   },
   content: {
     flex: 1,

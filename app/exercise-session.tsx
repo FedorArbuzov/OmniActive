@@ -2,6 +2,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import * as api from '@/utils/api';
 import { ExerciseResult, saveExerciseResult } from '@/utils/storage';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -69,7 +70,13 @@ export default function ExerciseSessionScreen() {
       sessionId: sessionId,
     };
 
-    await saveExerciseResult(result);
+    try {
+      await api.saveExerciseResult(result);
+    } catch (error) {
+      console.error('Ошибка сохранения результата упражнения:', error);
+      // Fallback на локальное хранилище при ошибке API
+      await saveExerciseResult(result);
+    }
 
     // Возвращаемся на экран тренировки
     router.back();

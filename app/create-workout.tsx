@@ -2,6 +2,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import * as api from '@/utils/api';
 import { Exercise, saveWorkout, Workout, WorkoutType } from '@/utils/storage';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
@@ -23,6 +24,10 @@ const STRENGTH_EXERCISES: Exercise[] = [
   { id: '13', name: 'Скручивания' },
   { id: '14', name: 'Велосипед' },
   { id: '15', name: 'Мостик' },
+  { id: '16', name: 'Отведение рук вниз на тицепс'},
+  { id: '17', name: 'Поднятие рук на бицепс'},
+  { id: '18', name: 'Разгибание ног в тренажере на квадрицепс'}
+  
 ];
 
 const BASKETBALL_EXERCISES: Exercise[] = [
@@ -86,8 +91,15 @@ export default function CreateWorkoutScreen() {
       createdAt: new Date().toISOString(),
     };
 
-    await saveWorkout(workout);
-    router.back();
+    try {
+      await api.saveWorkout(workout);
+      router.back();
+    } catch (error) {
+      console.error('Ошибка сохранения тренировки:', error);
+      // Fallback на локальное хранилище при ошибке API
+      await saveWorkout(workout);
+      router.back();
+    }
   };
 
   return (

@@ -1,0 +1,157 @@
+### Примеры запросов для тестирования API
+### Используйте расширение REST Client для VS Code или аналогичное
+
+@baseUrl = http://localhost:8000
+@token = your-jwt-token-here
+
+### Регистрация нового пользователя
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "testpassword123"
+}
+
+### Вход в систему
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "testpassword123"
+}
+
+### Получить все тренировки
+GET {{baseUrl}}/workouts
+Authorization: Bearer {{token}}
+
+### Создать тренировку
+PUT {{baseUrl}}/workouts/550e8400-e29b-41d4-a716-446655440000
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Тренировка груди",
+  "category": "index",
+  "type": "strength",
+  "exercises": [
+    {"id": "1", "name": "Жим лёжа"},
+    {"id": "2", "name": "Отжимания"}
+  ]
+}
+
+### Получить профиль
+GET {{baseUrl}}/profile
+Authorization: Bearer {{token}}
+
+### Обновить профиль
+PUT {{baseUrl}}/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "height_cm": 175,
+  "weight_kg": 70.5,
+  "age_years": 30
+}
+
+### Создать блюдо
+PUT {{baseUrl}}/dishes/550e8400-e29b-41d4-a716-446655440001
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Овсянка",
+  "calories": 350,
+  "protein": 12,
+  "fats": 6,
+  "carbs": 60
+}
+
+### Получить все блюда
+GET {{baseUrl}}/dishes
+Authorization: Bearer {{token}}
+
+### Добавить запись в дневник питания
+POST {{baseUrl}}/food-log
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "dish_id": "550e8400-e29b-41d4-a716-446655440001",
+  "dish_name": "Овсянка",
+  "calories": 350,
+  "protein": 12,
+  "fats": 6,
+  "carbs": 60,
+  "date": "2024-01-15T10:00:00Z"
+}
+
+### Сохранить шаги
+POST {{baseUrl}}/steps
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "date": "2024-01-15",
+  "steps": 10000
+}
+
+### Сохранить результат упражнения
+POST {{baseUrl}}/exercise-results
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "exercise_id": "1",
+  "exercise_name": "Жим лёжа",
+  "date": "2024-01-15T10:00:00Z",
+  "weight": 80,
+  "reps": 10
+}
+
+### Сохранить сессию тренировки
+POST {{baseUrl}}/workout-sessions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "workout_id": "550e8400-e29b-41d4-a716-446655440000",
+  "workout_name": "Тренировка груди",
+  "workout_type": "strength",
+  "date": "2024-01-15",
+  "duration_seconds": 3600
+}
+
+### Получить режим активности
+GET {{baseUrl}}/activity-settings/mode
+Authorization: Bearer {{token}}
+
+### Установить режим активности
+PUT {{baseUrl}}/activity-settings/mode
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mode": "daily"
+}
+
+### Установить фиксированный PAL
+PUT {{baseUrl}}/activity-settings/fixed-pal
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "pal": 1.4
+}
+
+### Сохранить ежедневную активность
+POST {{baseUrl}}/activity-settings/daily-log
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "date": "2024-01-15",
+  "pal": 1.5
+}

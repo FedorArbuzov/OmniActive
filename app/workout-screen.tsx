@@ -2,7 +2,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { ExerciseResult, getExerciseResults, getWorkouts, saveExerciseResult, Workout } from '@/utils/storage';
+import * as api from '@/utils/api';
+import { ExerciseResult, getExerciseResults, getWorkouts, saveExerciseResult, saveWorkoutSession, Workout } from '@/utils/storage';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Button, Modal, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
@@ -12,6 +13,8 @@ export default function WorkoutScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const [workout, setWorkout] = useState<Workout | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
   // Для силовых тренировок: weight и reps
   // Для баскетбола/хоккея: hits и misses
@@ -102,11 +105,27 @@ export default function WorkoutScreen() {
   }, [started, startTime]);
 
   const loadWorkout = async () => {
-    if (workoutId && category && !alertShownRef.current) {
-      const workouts = await getWorkouts(category);
-      const foundWorkout = workouts.find(w => w.id === workoutId);
+    if (!workoutId || !category) {
+      setError('Не указан ID тренировки или категория');
+      setIsLoading(false);
+      return;
+    }
+
+    if (alertShownRef.current) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Используем getWorkoutById для прямого получения тренировки по ID
+      // Это работает даже если workoutId - строка (timestamp), т.к. бэкенд преобразует её в UUID
+      const foundWorkout = await api.getWorkoutById(workoutId);
       if (foundWorkout) {
         setWorkout(foundWorkout);
+        setIsLoading(false);
         alertShownRef.current = true;
         // Показываем подтверждение перед началом
         Alert.alert(
@@ -129,6 +148,47 @@ export default function WorkoutScreen() {
           ],
           { cancelable: false }
         );
+      } else {
+        throw new Error('Тренировка не найдена');
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки тренировки:', error);
+      // Fallback на локальное хранилище при ошибке API
+      try {
+        const workouts = await getWorkouts(category);
+        const foundWorkout = workouts.find(w => w.id === workoutId);
+        if (foundWorkout) {
+          setWorkout(foundWorkout);
+          setIsLoading(false);
+          alertShownRef.current = true;
+          Alert.alert(
+            'Начать тренировку',
+            `Вы хотите начать тренировку "${foundWorkout.name}"?`,
+            [
+              {
+                text: 'Отмена',
+                style: 'cancel',
+                onPress: handleCancel,
+              },
+              {
+                text: 'Начать',
+                onPress: () => {
+                  requestAnimationFrame(() => {
+                    handleStart();
+                  });
+                },
+              },
+            ],
+            { cancelable: false }
+          );
+        } else {
+          setError('Тренировка не найдена');
+          setIsLoading(false);
+        }
+      } catch (storageError) {
+        console.error('Ошибка загрузки из локального хранилища:', storageError);
+        setError('Не удалось загрузить тренировку');
+        setIsLoading(false);
       }
     }
   };
@@ -136,9 +196,18 @@ export default function WorkoutScreen() {
   const loadHistoryForAllExercises = async () => {
     if (!workout) return;
     const history: Record<string, ExerciseResult[]> = {};
-    for (const exercise of workout.exercises) {
-      const results = await getExerciseResults(exercise.id);
-      history[exercise.id] = results;
+    try {
+      for (const exercise of workout.exercises) {
+        const results = await api.getExerciseResults(exercise.id);
+        history[exercise.id] = results;
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки истории упражнений:', error);
+      // Fallback на локальное хранилище при ошибке API
+      for (const exercise of workout.exercises) {
+        const results = await getExerciseResults(exercise.id);
+        history[exercise.id] = results;
+      }
     }
     setExerciseHistory(history);
   };
@@ -171,7 +240,13 @@ export default function WorkoutScreen() {
       sessionId: sessionId || undefined,
     };
 
-    await saveExerciseResult(result);
+    try {
+      await api.saveExerciseResult(result);
+    } catch (error) {
+      console.error('Ошибка сохранения результата упражнения:', error);
+      // Fallback на локальное хранилище при ошибке API
+      await saveExerciseResult(result);
+    }
     
     // Очищаем инпуты
     setExerciseInputs(prev => ({
@@ -259,19 +334,39 @@ export default function WorkoutScreen() {
       };
 
       console.log('Отправка данных тренировки на сервер:', workoutData);
+
+      // Сохраняем сессию для расчёта калорий по MET
+      const sessionDate = startTime ? `${startTime.getFullYear()}-${String(startTime.getMonth() + 1).padStart(2, '0')}-${String(startTime.getDate()).padStart(2, '0')}` : new Date().toISOString().slice(0, 10);
       
-      // Заглушка API запроса
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Имитация задержки сети
+      try {
+        await api.saveWorkoutSession({
+          date: sessionDate,
+          workoutId: workout?.id ?? '',
+          workoutName: workout?.name,
+          workoutType: workout?.type ?? 'strength',
+          durationSeconds: elapsedTime,
+        });
+        console.log('Сессия тренировки успешно сохранена на сервер');
+      } catch (error) {
+        console.error('Ошибка сохранения сессии тренировки:', error);
+        // Fallback на локальное хранилище при ошибке API
+        await saveWorkoutSession({
+          date: sessionDate,
+          workoutId: workout?.id ?? '',
+          workoutName: workout?.name,
+          workoutType: workout?.type ?? 'strength',
+          durationSeconds: elapsedTime,
+        });
+      }
       
-      // Здесь будет реальный запрос:
-      // const response = await fetch('https://your-api.com/workouts', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(workoutData),
-      // });
-      // if (!response.ok) throw new Error('Ошибка отправки данных');
-      
-      console.log('Данные успешно отправлены на сервер');
+      // Отправка полных данных тренировки на сервер (если нужен отдельный endpoint)
+      try {
+        // Можно добавить отдельный endpoint для сохранения полных данных тренировки
+        // await api.saveWorkoutSessionComplete(workoutData);
+        console.log('Данные тренировки успешно отправлены на сервер');
+      } catch (error) {
+        console.error('Ошибка отправки данных тренировки:', error);
+      }
       
       setShowEndModal(false);
       setStarted(false);
@@ -287,10 +382,32 @@ export default function WorkoutScreen() {
     }
   };
 
-  if (!workout) {
+  if (isLoading) {
     return (
       <ThemedView style={styles.container}>
         <ThemedText>Загрузка...</ThemedText>
+      </ThemedView>
+    );
+  }
+
+  if (error || !workout) {
+    return (
+      <ThemedView style={styles.container}>
+        <ThemedView style={styles.errorContainer}>
+          <ThemedText type="title" style={styles.errorTitle}>
+            Ошибка загрузки
+          </ThemedText>
+          <ThemedText style={styles.errorText}>
+            {error || 'Тренировка не найдена'}
+          </ThemedText>
+          <View style={styles.buttonContainer}>
+            <Button
+              title="Назад"
+              onPress={() => router.back()}
+              color={colors.tint}
+            />
+          </View>
+        </ThemedView>
       </ThemedView>
     );
   }
@@ -758,5 +875,21 @@ const styles = StyleSheet.create({
   modalButtonText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorTitle: {
+    marginBottom: 16,
+    fontSize: 24,
+  },
+  errorText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+    opacity: 0.7,
   },
 });
