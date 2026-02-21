@@ -19,9 +19,6 @@ ENV/
 *.swp
 *.swo
 
-# AWS Lambda
-*.zip
-lambda-deployment.zip
 
 # Database
 *.db
